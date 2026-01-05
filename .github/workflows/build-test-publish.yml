@@ -10,11 +10,28 @@ on:
       - develop
 
 jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '5.x', '6.x', '7.x', '8.x', '9.x', '10.x' ]
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup dotnet ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test with the dotnet CLI
+      run: dotnet test --no-build
   build:
     runs-on: windows-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
     - name: Fetch all history for all tags and branches
       run: git fetch --prune --unshallow
     - name: Install GitVersion
@@ -24,16 +41,14 @@ jobs:
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
       uses: gittools/actions/gitversion/execute@v0.9.9
-    - name: Setup .NET 9
-      uses: actions/setup-dotnet@v1
+    - name: Setup dotnet 10
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.203
+        dotnet-version: 10.x
     - name: Install dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore /p:Version=${{ steps.gitversion.outputs.nuGetVersionV2 }}
-    - name: Test
-      run: dotnet test --configuration Release --no-restore --no-build --verbosity normal
     - name: Publish
       if: github.ref == 'refs/heads/master'
       shell: pwsh
